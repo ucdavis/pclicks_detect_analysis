@@ -158,8 +158,8 @@ def get_smoothed_firing_rate(spike_times, kernel, start_time=0, end_time=np.inf)
 
     # compute buffers around the start and end times to include spikes that should be included in the filter
     # shift them by half a bin width to make the resulting time have a value at 0
-    pre_buff = (len(kernel['weights']) - kernel['center_idx']) * bin_width + bin_width/2
-    post_buff = (kernel['center_idx'] - 1) * bin_width + bin_width/2
+    pre_buff = (len(kernel['weights']) - kernel['center_idx'] - 1) * bin_width + bin_width/2
+    post_buff = (kernel['center_idx']) * bin_width + bin_width/2
 
     # compute signal and smooth it with a filter
     signal, bin_edges = get_binned_spike_counts(spike_times, start_time-pre_buff, end_time+post_buff, bin_width)
