@@ -291,12 +291,12 @@ class LocalDB_Base(ABC):
             path_search = self._get_sess_unit_path('*')
             files = glob.glob(path_search)
             for file in files:
-                self.__update_local_units(pd.read_json(file), False)
+                self.__update_local_units(pd.read_pickle(file), False)
 
             path_search = self._get_sess_beh_path('*')
             files = glob.glob(path_search)
             for file in files:
-                self.__update_local_sessions(pd.read_json(file), False)
+                self.__update_local_sessions(pd.read_pickle(file), False)
 
             self.__save_local_data()
 

@@ -24,8 +24,11 @@ def flatten_dict_array(dict_array):
     return [i for v in dict_array.values() for i in v]
 
 
-def convert_to_multiple(value, factor):
-    return factor * np.ceil(value/factor)
+def convert_to_multiple(value, factor, round_up=True):
+    if round_up:
+        return factor * np.ceil(value/factor)
+    else:
+        return factor * np.floor(value/factor)
 
 
 def stderr(x, axis=0, ignore_nan=True):

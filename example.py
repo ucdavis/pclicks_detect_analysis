@@ -41,15 +41,15 @@ miss_select = sess_trials['miss'] == 1
 
 # now we can get the smoothed firing rates for all units during either a hit or a miss
 kernel = ephys_utils.get_filter_kernel(0.2)  # defaults to causal half gaussian with a bin width of 5e-3
-smoothed_frs_hits = [[ephys_utils.get_smoothed_firing_rate(trial_spikes, kernel, sess_trials['cpoke_start'].iloc[i], sess_trials['stim_end'].iloc[i])
+smoothed_frs_hits = [[ephys_utils.get_smoothed_firing_rate(trial_spikes, kernel, sess_trials['cpoke_start'].iloc[i], sess_trials['stim_end'].iloc[i])[0]
                       for i, trial_spikes in enumerate(unit_spikes) if hit_select[i]]
                      for unit_spikes in all_trial_spikes]
 
-smoothed_frs_misses = [[ephys_utils.get_smoothed_firing_rate(trial_spikes, kernel, sess_trials['cpoke_start'].iloc[i], sess_trials['stim_end'].iloc[i])
+smoothed_frs_misses = [[ephys_utils.get_smoothed_firing_rate(trial_spikes, kernel, sess_trials['cpoke_start'].iloc[i], sess_trials['stim_end'].iloc[i])[0]
                         for i, trial_spikes in enumerate(unit_spikes) if miss_select[i]]
                        for unit_spikes in all_trial_spikes]
 
-# finally we can concatenate trials together for each unit, with units in the columns and time in the rows
+# finally we can concatenate trials together for each unit, with units in the columns and concatenated signal timesteps in the rows
 joined_unit_frs = np.vstack((
-    np.concatenate([np.array(unit_frs).flatten().reshape(-1, 1) for unit_frs in smoothed_frs_hits], axis=1),
-    np.concatenate([np.array(unit_frs).flatten().reshape(-1, 1) for unit_frs in smoothed_frs_misses], axis=1)))
+    np.concatenate([np.concatenate(unit_frs).reshape(-1, 1) for unit_frs in smoothed_frs_hits], axis=1),
+    np.concatenate([np.concatenate(unit_frs).reshape(-1, 1) for unit_frs in smoothed_frs_misses], axis=1)))

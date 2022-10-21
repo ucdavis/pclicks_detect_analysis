@@ -57,16 +57,18 @@ def get_binned_spike_counts(spike_times, start_time=0, end_time=np.inf, bin_widt
     bin_edges : The bin edges. Will have one more element than the counts
     '''
 
+    # handle default end time
     if np.isinf(end_time):
-        end_time = utils.convert_to_multiple(end_time-start_time, bin_width)
+        end_time = spike_times[-1]
 
-    bin_edges = np.arange(start_time, end_time, bin_width)
+    # make sure the end time will be included in the bins
+    bin_edges = np.arange(start_time, end_time+bin_width, bin_width)
     counts, _ = np.histogram(spike_times, bin_edges)
 
     return counts, bin_edges
 
 
-def get_filter_kernel(width, filter_type='half_gauss', bin_width=5e-5):
+def get_filter_kernel(width, filter_type='half_gauss', bin_width=5e-3):
     '''
     Gets a dictionary with entries that contain information used by filtering routines
 
@@ -154,7 +156,7 @@ def get_smoothed_firing_rate(spike_times, kernel, start_time=0, end_time=np.inf)
     bin_width = kernel['bin_width']
 
     if np.isinf(end_time):
-        end_time = utils.convert_to_multiple(end_time-start_time, bin_width)
+        end_time = utils.convert_to_multiple(spike_times[-1]-start_time, bin_width) + start_time
 
     # compute buffers around the start and end times to include spikes that should be included in the filter
     # shift them by half a bin width to make the resulting time have a value at 0
@@ -167,12 +169,12 @@ def get_smoothed_firing_rate(spike_times, kernel, start_time=0, end_time=np.inf)
     signal = np.convolve(signal, kernel['weights'])
 
     # remove extra bins created from filtering
-    filter_pre_cutoff = len(kernel['weights'])
-    filter_post_cutoff = len(kernel['weights']) - 1
+    filter_pre_cutoff = len(kernel['weights']) - 1
+    filter_post_cutoff = len(kernel['weights'])
     signal = signal[filter_pre_cutoff:-filter_post_cutoff]
 
-    # get time as the middle of each bin
-    time = (bin_edges[1:] + bin_edges[:-1]) / 2
+    _, time = get_binned_spike_counts(spike_times, start_time, end_time)
+    time = time[0:-1]
 
     return signal, time
 
