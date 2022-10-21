@@ -261,15 +261,44 @@ def __get_connector():
                 if '=' in line:
                     prop_val = line.split('=')
                     conn_info[prop_val[0].strip()] = prop_val[1].strip()
+
+        try:
+            con = mysql.connector.connect(
+                host=conn_info['host'],
+                user=conn_info['user'],
+                password=conn_info['passwd'])
+
+        except BaseException as e:
+            print('Could not connect to the database: {0}'.format(e.msg))
+            raise
     else:
         # create a new db config
         # get values from user
-        val = input('Enter host address: ')
+        val = ''
+        while val == '':
+            val = input('Enter database host address: ')
         conn_info['host'] = val
-        val = input('Enter username: ')
+
+        val = ''
+        while val == '':
+            val = input('Enter username: ')
         conn_info['user'] = val
-        val = input('Enter password: ')
+
+        val = ''
+        while val == '':
+            val = input('Enter password: ')
         conn_info['passwd'] = val
+
+        # try connecting before saving file
+        try:
+            con = mysql.connector.connect(
+                host=conn_info['host'],
+                user=conn_info['user'],
+                password=conn_info['passwd'])
+
+        except BaseException as e:
+            print('Could not connect to the database: {0}'.format(e.msg))
+            raise
 
         # write file
         with open(config_path, 'w') as config:
@@ -277,16 +306,7 @@ def __get_connector():
             for name, val in conn_info.items():
                 config.write('{0} = {1}\n'.format(name, val))
 
-    try:
-        con = mysql.connector.connect(
-            host=conn_info['host'],
-            user=conn_info['user'],
-            password=conn_info['passwd'])
-
-        return con
-    except BaseException as e:
-        print('Could not connect to the database: {0}'.format(e.msg))
-        raise
+    return con
 
 
 def __parse_json(x):
