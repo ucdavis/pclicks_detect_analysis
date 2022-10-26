@@ -67,7 +67,7 @@ smoothed_frs_hits = ephys_utils.get_fr_matrix_by_trial(
     sess_units, kernel, sess_trials[['cpoke_start', 'cpoke_out']], hit_select)
 
 smoothed_frs_misses = ephys_utils.get_fr_matrix_by_trial(
-    sess_units, kernel, sess_trials[['cpoke_start', 'cpoke_out']], hit_select)
+    sess_units, kernel, sess_trials[['cpoke_start', 'cpoke_out']], miss_select)
 
 # then stack all matrices into one large fr matrix with units in the columns
 joined_unit_frs = np.vstack((np.vstack(smoothed_frs_hits), np.vstack(smoothed_frs_misses)))
