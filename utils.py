@@ -38,7 +38,7 @@ def stderr(x, axis=0, ignore_nan=True):
 
     if ignore_nan:
         std = np.nanstd(x, axis)
-        n = np.sum(not np.isnan(x), axis)
+        n = np.sum(np.logical_not(np.isnan(x)), axis)
     else:
         std = np.std(x, axis)
         n = np.shape(x)[axis]

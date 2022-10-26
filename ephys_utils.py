@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Set of functions to organize and manipulate spiking data 
+Set of functions to organize and manipulate spiking data
 
 @author: tanner stevenson
 """
 
 import numpy as np
+import pandas as pd
 from scipy.stats import norm
 import utils
+import warnings
 
 
 def get_trial_spike_times(spike_times, trial_start_times):
@@ -21,7 +23,7 @@ def get_trial_spike_times(spike_times, trial_start_times):
 
     Returns
     -------
-    A list of numpy arrays containing the spike times within each trial relative to the start of each trial 
+    A list of numpy arrays containing the spike times within each trial relative to the start of each trial
     '''
 
     # make sure the spike times are a numpy array for logical comparisons
@@ -37,7 +39,8 @@ def get_trial_spike_times(spike_times, trial_start_times):
 
         trial_spike_times.append(spike_times[spike_select] - trial_start_times[i])
 
-    return trial_spike_times
+    # convert to pandas series for easier usage
+    return pd.Series(trial_spike_times)
 
 
 def get_binned_spike_counts(spike_times, start_time=0, end_time=np.inf, bin_width=5e-3):
@@ -68,16 +71,16 @@ def get_binned_spike_counts(spike_times, start_time=0, end_time=np.inf, bin_widt
     return counts, bin_edges
 
 
-def get_filter_kernel(width, filter_type='half_gauss', bin_width=5e-3):
+def get_filter_kernel(width=0.2, filter_type='half_gauss', bin_width=5e-3):
     '''
     Gets a dictionary with entries that contain information used by filtering routines
 
     Parameters
     ----------
-    width : The width of the filter
-    filter_type : (optional) The type of filter. Acceptable values: 'avg', 'causal_avg', 'gauss', 'half_gauss', 'exp', and 'none'. 
+    width : (optional) The width of the filter in seconds. The default is 0.2 s.
+    filter_type : (optional) The type of filter. Acceptable values: 'avg', 'causal_avg', 'gauss', 'half_gauss', 'exp', and 'none'.
         The default is 'half_gauss'.
-    bin_width : (optional) The width of the bin. The default is 5e-5.
+    bin_width : (optional) The width of the bin in seconds. The default is 5e-5 s.
 
     Returns
     -------
@@ -136,14 +139,14 @@ def get_filter_kernel(width, filter_type='half_gauss', bin_width=5e-3):
             'center_idx': np.where(x == 0)[0][0]}
 
 
-def get_smoothed_firing_rate(spike_times, kernel, start_time=0, end_time=np.inf):
+def get_smoothed_firing_rate(spike_times, kernel=None, start_time=0, end_time=np.inf):
     '''
     Will calculate a smoothed firing rate based on the spike times between the given start and end times
 
     Parameters
     ----------
     spike_times : List of spike times
-    kernel : A kernel dictionary from get_filter_kernel
+    kernel : (optional) A kernel dictionary from get_filter_kernel. Defaults to a half-gaussian of 0.2 s
     start_time : (optional) The start time of smoothed signal. The default is 0.
     end_time : (optional) The end time of the smoothed signal. The default is the last spike time
 
@@ -153,13 +156,16 @@ def get_smoothed_firing_rate(spike_times, kernel, start_time=0, end_time=np.inf)
     time : The time values corresponding to the signal values
     '''
 
+    if kernel is None:
+        kernel = get_filter_kernel()
+
     bin_width = kernel['bin_width']
 
     if np.isinf(end_time):
         end_time = utils.convert_to_multiple(spike_times[-1]-start_time, bin_width) + start_time
 
     # compute buffers around the start and end times to include spikes that should be included in the filter
-    # shift them by half a bin width to make the resulting time have a value at 0
+    # shift them by half a bin width to make the resulting time have a value at t=0
     pre_buff = (len(kernel['weights']) - kernel['center_idx'] - 1) * bin_width + bin_width/2
     post_buff = (kernel['center_idx']) * bin_width + bin_width/2
 
@@ -170,16 +176,15 @@ def get_smoothed_firing_rate(spike_times, kernel, start_time=0, end_time=np.inf)
 
     # remove extra bins created from filtering
     filter_pre_cutoff = len(kernel['weights']) - 1
-    filter_post_cutoff = len(kernel['weights'])
+    filter_post_cutoff = len(kernel['weights']) - 1
     signal = signal[filter_pre_cutoff:-filter_post_cutoff]
 
-    _, time = get_binned_spike_counts(spike_times, start_time, end_time)
-    time = time[0:-1]
+    time = np.arange(start_time, end_time+bin_width, bin_width)
 
     return signal, time
 
 
-def get_psth(spike_times, align_times, kernel, window, mask_bounds=None):
+def get_psth(spike_times, align_times, window, kernel=None, mask_bounds=None):
     '''
     Will calculate a peri-stimulus time histogram (PSTH) of the average firing rate aligned to the specified alignment points
 
@@ -190,7 +195,7 @@ def get_psth(spike_times, align_times, kernel, window, mask_bounds=None):
         Can be a single list or a list of lists if there are multiple (K*) alignment points per trial.
         Time is relative to start of the trial
     kernel : The smoothing filter kernel
-    window : The window (pre, post) around the alignment points that define the bounds of the psth. 
+    window : The window (pre, post) around the alignment points that define the bounds of the psth.
         Time is relative to alignment point
     mask_bounds : (optional) The boundaries (pre, post) per trial past which any signal should be removed before averaging.
         Either a Nx2 matrix of boundaries or a list of N K*x2 matrices if there are K* alignment points per trial.
@@ -207,27 +212,37 @@ def get_psth(spike_times, align_times, kernel, window, mask_bounds=None):
 
     ## Handle multiple forms of inputs and check dimensions ##
 
-    # make single vector of spike times represent a single 'trial'
-    if utils.is_scalar(spike_times[0]):
-        spike_times = [spike_times]
+    if kernel is None:
+        kernel = get_filter_kernel()
+
+    # handle pandas series in input
+    # resetting index will make the indices reset to 0 based
+    if isinstance(spike_times, pd.Series):
+        spike_times = spike_times.reset_index(drop=True)
+
+    if isinstance(align_times, pd.Series):
+        align_times = align_times.reset_index(drop=True)
 
     n_trials = len(spike_times)
-
-    # make single vector of alignment times represent multiple points within a single 'trial'
-    if utils.is_scalar(align_times[0]):
-        align_times = [align_times]
 
     # check the number of trials matches up
     if len(align_times) != n_trials:
         raise ValueError('The number of alignment points ({0}) does not match the number of trials ({1})'.format(
             len(align_times), n_trials))
 
-    # check the mask bounds
+    # handle the mask bounds
     has_mask = not mask_bounds is None
     if has_mask:
-        # make single matrix of mask bounds be for multiple alignment points in a single 'trial'
+        # convert a pandas data frame to a numpy array
+        if isinstance(mask_bounds, pd.DataFrame):
+            mask_bounds = mask_bounds.to_numpy()
+
+        # check dimensions on the mask bounds
         if isinstance(mask_bounds, np.ndarray):
-            mask_bounds = [mask_bounds]
+            # check there is a start and end to the mask
+            if mask_bounds.shape[1] != 2:
+                raise ValueError('The mask bounds must have start and end times in separate columns. Instead found {0} columns.'.format(
+                    mask_bounds.shape[1]))
 
         # check the number of trials matches up
         if len(mask_bounds) != n_trials:
@@ -242,22 +257,29 @@ def get_psth(spike_times, align_times, kernel, window, mask_bounds=None):
         time_bin_edges = np.append(time - kernel['bin_width']/2, time[-1] + kernel['bin_width']/2)
 
     all_signals = []
+    aligned_spikes = []
 
     for i in range(n_trials):
         trial_spike_times = np.array(spike_times[i])
         trial_align_times = align_times[i]
 
+        # cast to list to allow for generic handling of one or multiple alignment points
+        if utils.is_scalar(trial_align_times):
+            trial_align_times = [trial_align_times]
+
         if has_mask:
-            trial_mask_bounds = mask_bounds[i]
+            # make the mask a 2d array
+            trial_mask_bounds = np.array(mask_bounds[i]).reshape(-1, 2)
 
             # make sure number of mask bounds is the same as number of alignment points
-            if not np.shape(trial_mask_bounds)[0] != len(trial_align_times):
+            if trial_mask_bounds.shape[0] != len(trial_align_times):
                 raise ValueError('The number of trial mask bounds ({0}) does not match the number of alignment points ({1}) in trial {2}'.format(
-                    np.shape(trial_mask_bounds)[0], len(trial_align_times), i))
+                    trial_mask_bounds.shape[0], len(trial_align_times), i))
 
         for j, align_ts in enumerate(trial_align_times):
             offset_ts = trial_spike_times - align_ts
             signal, _ = get_smoothed_firing_rate(offset_ts, kernel, window[0], window[1])
+            signal_spikes = offset_ts[np.logical_and(offset_ts > window[0], offset_ts < window[1])]
 
             # mask the signal
             if has_mask:
@@ -272,15 +294,95 @@ def get_psth(spike_times, align_times, kernel, window, mask_bounds=None):
                 # mask with nans
                 if mask_start_idx > 0:
                     signal[0:mask_start_idx] = np.nan
-                if mask_end_idx < len(signal):
+                if mask_end_idx < len(signal)-1:
                     signal[mask_end_idx:] = np.nan
 
-            all_signals = all_signals.append(signal)
+                signal_spikes[np.logical_or(signal_spikes < mask_start, signal_spikes > mask_end)] = np.nan
+
+            all_signals.append(signal)
+            aligned_spikes.append(signal_spikes)
 
     # convert all signals list to matrix
     all_signals = np.array(all_signals)
-    # compute average and standard error
-    return {'signal_avg': np.nanmean(all_signals, axis=0),
-            'signal_se': utils.stderr(all_signals),
-            'time': time,
-            'all_signals': all_signals}
+
+    # ignore warnings that nanmean throws if all values are nan
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        # compute average and standard error
+        return {'signal_avg': np.nanmean(all_signals, axis=0),
+                'signal_se': utils.stderr(all_signals),
+                'time': time,
+                'all_signals': all_signals,
+                'aligned_spikes': aligned_spikes}
+
+
+def get_fr_matrix_by_trial(units_table, kernel=None, trial_bounds=None, trial_select=None):
+    '''
+    Takes a unit data table for a single session and outputs a pandas series of smoothed firing rate matrices
+    for all units (T timesteps x N units) in each trial, optionally limited to a specified set of bounds.
+
+    Parameters
+    ----------
+    units_table : A table of units for a single session
+    kernel : (optional) The filter kernel. Defaults to a half-gaussian of width 0.2 s
+    trial_bounds : (optional) The trial bounds. Defaults to the whole trial
+    trial_select : (optional) A boolean list indicating which trials should be included. Defaults to all trials
+
+    Returns
+    -------
+    Returns a pandas dataframe of smoothed firing rate matrices for all units (T timesteps x N units) organized by trial.
+    '''
+
+    if len(np.unique(units_table['sessid'])) > 1:
+        raise ValueError('You can only pass in units for a single session. Found {0} sessions.'.format(
+            len(np.unique(units_table['sessid']))))
+
+    frs_by_trial = []
+
+    # get the trial spikes organized by unit
+    trial_spikes_by_unit = [get_trial_spike_times(units_table['spike_timestamps'].iloc[i],
+                                                  units_table['trial_start_timestamps'].iloc[i])
+                            for i in range(len(units_table))]
+
+    n_trials = len(units_table['trial_start_timestamps'].iloc[0]) - 1
+
+    if trial_bounds is None:
+        # compute the ends of the trials as the beginning of the next trial
+        trial_ends = units_table['trial_start_timestamps'].iloc[0][1:] - \
+            units_table['trial_start_timestamps'].iloc[0][:-1]
+        trial_ends = trial_ends.reshape(-1, 1)
+        trial_bounds = np.concatenate((np.zeros_like(trial_ends), trial_ends), axis=1)
+    else:
+        # convert a pandas data frame to a numpy array
+        if isinstance(trial_bounds, pd.DataFrame):
+            trial_bounds = trial_bounds.to_numpy()
+
+        # check dimensions on the mask bounds
+        if isinstance(trial_bounds, np.ndarray):
+            # check there is a start and end to the mask
+            if trial_bounds.shape[1] != 2:
+                raise ValueError('The trial bounds must have start and end times in separate columns. Instead found {0} columns.'.format(
+                    trial_bounds.shape[1]))
+
+        # check the number of trials matches up
+        if len(trial_bounds) != n_trials:
+            raise ValueError('The number of trial bounds ({0}) does not match the number of trials ({1})'.format(
+                len(trial_bounds), n_trials))
+
+    # handle the trial select
+    if trial_select is None:
+        trial_select = [True] * n_trials
+    else:
+        # check the number of trials matches up
+        if len(trial_select) != n_trials:
+            raise ValueError('The number of trial selects ({0}) does not match the number of trials ({1})'.format(
+                len(trial_select), n_trials))
+
+    # go through trials and build each matrix of smoothed firing rates
+    frs_by_trial = [np.array([get_smoothed_firing_rate(unit_spikes[i], kernel, trial_bounds[i, 0], trial_bounds[i, 1])[0]
+                              for unit_spikes in trial_spikes_by_unit]).T
+                    for i in range(n_trials) if trial_select[i]]
+
+    frs_by_trial = pd.Series(frs_by_trial)
+
+    return frs_by_trial

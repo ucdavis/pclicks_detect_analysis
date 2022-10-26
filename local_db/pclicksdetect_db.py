@@ -59,6 +59,9 @@ class LocalDB_PClicksDetect(base_db.LocalDB_Base):
         # reward poke
         sess_data['reward_time'] = peh['states'].apply(lambda x: np.nan if x['Reward'][0] is None else x['Reward'][0])
 
+        # trial end
+        sess_data['trial_end'] = peh['states'].apply(lambda x: x['ITI'][1])
+
         # calculate some metrics about the trials
         sync_sent = peh['states'].apply(lambda x: np.nan if x['StimulusOne'][0] is None else min(x['StimulusOne']))
         sess_data['sync_lag'] = sess_data['stim_start'] - sync_sent

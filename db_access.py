@@ -96,7 +96,7 @@ def get_session_data(session_ids):
     sess_query = ('select sessid, subjid, sessiondate, starttime, protocol, startstage, rigid '
                   'from beh.sessions where sessid in ({0}) order by sessid').format(id_str)
 
-    trial_query = ('select sessid, trialnum, data, parsed_events from beh.trials '
+    trial_query = ('select sessid, trialtime, trialnum, data, parsed_events from beh.trials '
                    'where sessid in ({0}) order by sessid, trialnum')
 
     # get all session data
@@ -120,7 +120,7 @@ def get_session_data(session_ids):
             trial_data.pop('n_done_trials')  # this is redundant
             # convert all lists of numbers to numpy arrays
             for key, value in trial_data.items():
-                if not utils.is_scalar(value) and isinstance(value[0], numbers.Number):
+                if not utils.is_scalar(value) and not len(value) == 0 and isinstance(value[0], numbers.Number):
                     trial_data[key] = np.array(value)
             # merge all dictionaries into single row
             sess_data.append({**sess, **trial, **trial_data})
