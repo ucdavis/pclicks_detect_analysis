@@ -151,7 +151,7 @@ def get_unit_protocol_subj_ids(protocol):
     ids = cur.fetchall()
 
     # flatten list of tuples
-    return [i[0] for i in ids]
+    return sorted([i[0] for i in ids])
 
 
 def get_subj_unit_ids(subj_ids):

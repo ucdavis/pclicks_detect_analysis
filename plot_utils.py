@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Oct 24 15:41:12 2022
+Set of functions to create common plots
 
-@author: tanne
+@author: tanner stevenson
 """
 
 import matplotlib.pyplot as plt
@@ -66,5 +66,8 @@ def plot_raster(spike_times, ax=None, plot_x0=True, **kwargs):
         y_min = [i] * len(trial_spike_times)
         y_max = [i+1] * len(trial_spike_times)
         ax.vlines(trial_spike_times, y_min, y_max)
+
+    # this doesn't work correctly... not sure why
+    #ax.eventplot(spike_times, **kwargs)
 
     return ax

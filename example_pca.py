@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Oct 10 15:56:31 2022
+Example of how to do PCA
 
-@author: tanne
+@author: tanner stevenson
 """
 
 import db_access

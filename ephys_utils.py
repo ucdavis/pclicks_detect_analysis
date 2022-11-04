@@ -237,6 +237,10 @@ def get_psth(spike_times, align_times, window, kernel=None, mask_bounds=None):
         if isinstance(mask_bounds, pd.DataFrame):
             mask_bounds = mask_bounds.to_numpy()
 
+        # convert a list of two lists to a numpy array
+        if isinstance(mask_bounds, list):
+            mask_bounds = np.hstack([np.array(bounds).reshape(-1, 1) for bounds in mask_bounds])
+
         # check dimensions on the mask bounds
         if isinstance(mask_bounds, np.ndarray):
             # check there is a start and end to the mask
@@ -272,18 +276,27 @@ def get_psth(spike_times, align_times, window, kernel=None, mask_bounds=None):
             trial_mask_bounds = np.array(mask_bounds[i]).reshape(-1, 2)
 
             # make sure number of mask bounds is the same as number of alignment points
-            if trial_mask_bounds.shape[0] != len(trial_align_times):
+            if trial_mask_bounds.shape[0] != 1 and trial_mask_bounds.shape[0] != len(trial_align_times):
                 raise ValueError('The number of trial mask bounds ({0}) does not match the number of alignment points ({1}) in trial {2}'.format(
                     trial_mask_bounds.shape[0], len(trial_align_times), i))
 
         for j, align_ts in enumerate(trial_align_times):
+            if has_mask:
+                if trial_mask_bounds.shape[0] == 1:
+                    align_mask = trial_mask_bounds[0, :]
+                else:
+                    align_mask = trial_mask_bounds[j, :]
+
+                # ignore alignment points outside of the mask
+                if align_ts < align_mask[0] or align_ts > align_mask[1]:
+                    continue
+
             offset_ts = trial_spike_times - align_ts
             signal, _ = get_smoothed_firing_rate(offset_ts, kernel, window[0], window[1])
             signal_spikes = offset_ts[np.logical_and(offset_ts > window[0], offset_ts < window[1])]
 
             # mask the signal
             if has_mask:
-                align_mask = trial_mask_bounds[j, :]
 
                 # find mask indices
                 mask_start = align_mask[0] - align_ts

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Oct 24 16:53:17 2022
+Example of how to do calculate and plot various PSTHs
 
-@author: tanne
+@author: tanner stevenson
 """
 
 import local_db.pclicksdetect_db as db
@@ -10,6 +10,8 @@ import numpy as np
 import ephys_utils
 import plot_utils
 import matplotlib.pyplot as plt
+
+# %% Load the data
 
 loc_db = db.LocalDB_PClicksDetect()
 # subj_ids = loc_db.get_protocol_subject_ids() # will get all subjects recorded during this protocol
@@ -37,12 +39,14 @@ max_spikes_unit = sess_units.iloc[np.argmax(sess_units['number_spikes'])]
 trial_spikes = ephys_utils.get_trial_spike_times(
     max_spikes_unit['spike_timestamps'], max_spikes_unit['trial_start_timestamps'])
 
+# %% Create some PSTHs aligned to different points
+
 # next we'll select for trials that resulted in hit or a fa
 hit_select = (sess_trials['hit'] == 1) & (sess_trials['rewarded'])
 fa_select = sess_trials['FA'] == 1
 
 # now lets generate and plot PSTHs aligned to change and response times for both types of trials
-kernel = ephys_utils.get_filter_kernel(0.2)  # defaults to causal half gaussian with a bin width of 5e-3
+kernel = ephys_utils.get_filter_kernel()  # defaults to causal half gaussian with a width of 0.2s and a bin width of 5e-3
 hit_change_psth = ephys_utils.get_psth(trial_spikes[hit_select],
                                        sess_trials.loc[hit_select, 'change_time'],  # align to change time
                                        (-1, 0.5),  # show 1 second window around the change time
@@ -61,6 +65,7 @@ fa_resp_psth = ephys_utils.get_psth(trial_spikes[fa_select],
                                     kernel,
                                     sess_trials.loc[fa_select, ['stim_start', 'trial_end']])  # mask any signal before the stimulus and after the reward
 
+# %% Plot PSTHs
 _, axs = plt.subplots(2, 2)
 axs = axs.flatten()
 plot_utils.plot_psth_dict(hit_change_psth, axs[0])
@@ -97,3 +102,31 @@ for i in range(4):
     axs[0].set_ylabel('Firing rate (Hz)')
     axs[1].set_ylabel('Trial')
     axs[1].set_xlabel('Time from response (s)')
+
+# %% Create Click-triggered Average (CTA)
+
+# we can also plot a click-triggered average which is the average response of the neuron to a click
+# first calculate the boundaries over which we want to calculate the CTA for each trial
+buffer = 0.1
+# only include clicks a few ms after the stimulus starts and a few ms before the change when a change occurs
+# or a few ms before the end of the stimulus otherwise
+cta_start = sess_trials['stim_start'] + buffer
+cta_end = sess_trials.apply(lambda x: x['change_time'] - buffer
+                            if not np.isnan(x['change_time'])
+                            else x['stim_end'] - buffer,
+                            axis=1)
+kernel = ephys_utils.get_filter_kernel()  # defaults to causal half gaussian with a width of 0.2s and a bin width of 5e-3
+cta = ephys_utils.get_psth(trial_spikes,  # we'll use all trials
+                           sess_trials['abs_click_times'],  # align to all clicks
+                           (-0.4, 0.8),  # show 0.4 seconds before and 0.8 seconds after a click
+                           kernel, [cta_start, cta_end])
+
+# %% Plot Click-triggered Average (CTA)
+
+_, axs = plt.subplots(2, 1, sharex=True)
+plot_utils.plot_psth_dict(cta, axs[0])
+plot_utils.plot_raster(cta['aligned_spikes'], axs[1])
+axs[0].set_title('Click Triggered Average')
+axs[0].set_ylabel('Firing rate (Hz)')
+axs[1].set_xlabel('Time from click (s)')
+axs[1].set_ylabel('Trial')
