@@ -119,16 +119,17 @@ class LocalDB_PClicksDetect(base_db.LocalDB_Base):
     def __determine_valid(self, row):
         # checks the timing on trials to find trials where a bug in the state machine caused incorrect state progression
         outcome = row['outcome']
-        trial_end = row['change_time'] + row['response_window']
+        change_time = row['stim_start'] + row['change_delay']
+        rw_end = change_time + row['response_window']
         if outcome == 'rewarded hit':
-            valid = row['stim_end'] > row['change_time'] and row['stim_end'] < trial_end
+            valid = row['cpoke_out'] > change_time and row['cpoke_out'] < rw_end
         elif outcome == 'miss':
-            valid = (row['stim_end'] - trial_end) > -1e-3
+            valid = (row['stim_end'] - rw_end) > -1e-3
         elif outcome == 'false alarm':
-            valid = ((row['cpoke_out'] < row['change_time'] and row['catch_trial'] == 0) or
-                     (row['cpoke_out'] < trial_end and row['catch_trial'] == 1))
+            valid = ((row['cpoke_out'] < change_time and row['catch_trial'] == 0) or
+                     (row['cpoke_out'] < rw_end and row['catch_trial'] == 1))
         elif outcome == 'rewarded CR':
-            valid = (row['stim_end'] - trial_end) > -1e-3
+            valid = (row['stim_end'] - rw_end) > -1e-3
         else:
             valid = False
 
