@@ -1,2 +1,2 @@
-# ephys_analysis
-Repository for tools to perform analyses on multi-electrode extracellular neural recordings
+# pclicks_detect_analysis
+Repository for analyses on poisson clicks change detection task

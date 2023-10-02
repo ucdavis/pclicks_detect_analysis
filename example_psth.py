@@ -5,11 +5,16 @@ Example of how to do calculate and plot various PSTHs
 @author: tanner stevenson
 """
 
-import local_db.pclicksdetect_db as db
+# %% Imports
+
+import sys
+from os import path
+sys.path.append(path.join(path.dirname(path.abspath(__file__)), '..'))
+
 import numpy as np
-import ephys_utils
-import plot_utils
 import matplotlib.pyplot as plt
+import hankslab_db.pclicksdetect_db as db
+from sys_neuro_tools import ephys_utils, plot_utils
 
 # %% Load the data
 
@@ -22,6 +27,8 @@ subj_ids = [78]  # 94
 # this will take a while (~60 mins) the first time
 unit_data = loc_db.get_subj_unit_data(subj_ids)
 sess_data = loc_db.get_subj_behavior_data(subj_ids)
+
+# %% Filter the data
 
 # lets get filtered firing rates for all units in a session while the rat is poked into the center port on hit and miss trials
 # find the session with the most single units
@@ -66,7 +73,7 @@ fa_resp_psth = ephys_utils.get_psth(trial_spikes[fa_select],
                                     sess_trials.loc[fa_select, ['stim_start', 'trial_end']])  # mask any signal before the stimulus and after the reward
 
 # %% Plot PSTHs
-_, axs = plt.subplots(2, 2)
+_, axs = plt.subplots(2, 2, constrained_layout=True)
 axs = axs.flatten()
 plot_utils.plot_psth_dict(hit_change_psth, axs[0])
 plot_utils.plot_psth_dict(hit_resp_psth, axs[1])
@@ -82,8 +89,10 @@ axs[3].set_title('FAs')
 axs[3].set_xlabel('Time from response (s)')
 axs[3].set_ylabel('Firing rate (Hz)')
 
+plt.show()
+
 # We can also plot a raster of the psth
-_, axs = plt.subplots(2, 1, sharex=True)
+_, axs = plt.subplots(2, 1, sharex=True, constrained_layout=True)
 axs = axs.flatten()
 plot_utils.plot_psth_dict(hit_resp_psth, axs[0])
 plot_utils.plot_raster(hit_resp_psth['aligned_spikes'], axs[1])
@@ -95,13 +104,15 @@ axs[1].set_ylabel('Trial')
 
 # as a sanity check, we can also make sure the spikes on individual trials line up with the smoothed signal from that trial
 for i in range(4):
-    _, axs = plt.subplots(2, 1, sharex=True)
+    _, axs = plt.subplots(2, 1, sharex=True, constrained_layout=True)
     plot_utils.plot_psth(hit_resp_psth['all_signals'][i], hit_resp_psth['time'], ax=axs[0])
     plot_utils.plot_raster(hit_resp_psth['aligned_spikes'][i], axs[1])
 
     axs[0].set_ylabel('Firing rate (Hz)')
     axs[1].set_ylabel('Trial')
     axs[1].set_xlabel('Time from response (s)')
+
+plt.show()
 
 # %% Create Click-triggered Average (CTA)
 
@@ -123,10 +134,14 @@ cta = ephys_utils.get_psth(trial_spikes,  # we'll use all trials
 
 # %% Plot Click-triggered Average (CTA)
 
-_, axs = plt.subplots(2, 1, sharex=True)
+_, axs = plt.subplots(2, 1, sharex=True, constrained_layout=True)
 plot_utils.plot_psth_dict(cta, axs[0])
-plot_utils.plot_raster(cta['aligned_spikes'], axs[1])
+plot_utils.plot_raster(cta['aligned_spikes'][0:1000], axs[1]) # only plot 1000 clicks for time sake
 axs[0].set_title('Click Triggered Average')
 axs[0].set_ylabel('Firing rate (Hz)')
 axs[1].set_xlabel('Time from click (s)')
 axs[1].set_ylabel('Trial')
+
+plt.show()
+
+# %%
