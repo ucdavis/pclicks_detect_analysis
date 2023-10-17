@@ -213,7 +213,7 @@ plot_pc_activity(axs[0,0], pca_poke, smoothed_frs_hits_poke[hit_trials_plot_sel]
 
 plot_pc_activity(axs[1,0], pca_poke, smoothed_frs_fas_poke[fa_trials_plot_sel], cpoke_start[fa_idxs_to_plot],
                  cpoke_start[fa_idxs_to_plot], cpoke_out[fa_idxs_to_plot], kernel['bin_width'],
-                 title='FAs - center poke', color_type='trial', colors=trial_colors, norm_trial_idxs=hit_idxs_to_plot/n_trials)
+                 title='FAs - center poke', color_type='trial', colors=trial_colors, norm_trial_idxs=fa_idxs_to_plot/n_trials)
 
 plot_pc_activity(axs[0,1], pca_trial, smoothed_frs_hits_trial[hit_trials_plot_sel], trial_bounds[hit_idxs_to_plot,0],
                  trial_cpoke_start[hit_idxs_to_plot], trial_cpoke_out[hit_idxs_to_plot], kernel['bin_width'],
@@ -221,7 +221,7 @@ plot_pc_activity(axs[0,1], pca_trial, smoothed_frs_hits_trial[hit_trials_plot_se
 
 plot_pc_activity(axs[1,1], pca_trial, smoothed_frs_fas_trial[fa_trials_plot_sel], trial_bounds[fa_idxs_to_plot,0],
                  trial_cpoke_start[fa_idxs_to_plot], trial_cpoke_out[fa_idxs_to_plot], kernel['bin_width'],
-                 title='FAs - expanded trial', color_type='trial', colors=trial_colors, norm_trial_idxs=hit_idxs_to_plot/n_trials)
+                 title='FAs - expanded trial', color_type='trial', colors=trial_colors, norm_trial_idxs=fa_idxs_to_plot/n_trials)
 
 # add color bar
 fig.colorbar(mpl.cm.ScalarMappable(norm=mpl.colors.Normalize(vmin=1, vmax=n_trials), cmap=trial_colors),
@@ -273,7 +273,7 @@ plot_pc_activity(axs[0,0], pca_poke, smoothed_frs_hits_poke[hit_trials_plot_sel]
 
 plot_pc_activity(axs[1,0], pca_poke, smoothed_frs_fas_poke[fa_trials_plot_sel], cpoke_start[fa_idxs_to_plot],
                  cpoke_start[fa_idxs_to_plot], cpoke_out[fa_idxs_to_plot], kernel['bin_width'], title='FAs - center poke',
-                 color_type='trial', colors=trial_colors, norm_trial_idxs=hit_idxs_to_plot/n_trials, x_pc=2, y_pc=3)
+                 color_type='trial', colors=trial_colors, norm_trial_idxs=fa_idxs_to_plot/n_trials, x_pc=2, y_pc=3)
 
 plot_pc_activity(axs[0,1], pca_trial, smoothed_frs_hits_trial[hit_trials_plot_sel], trial_bounds[hit_idxs_to_plot,0],
                  trial_cpoke_start[hit_idxs_to_plot], trial_cpoke_out[hit_idxs_to_plot], kernel['bin_width'], title='Hits - expanded trial',
@@ -281,7 +281,7 @@ plot_pc_activity(axs[0,1], pca_trial, smoothed_frs_hits_trial[hit_trials_plot_se
 
 plot_pc_activity(axs[1,1], pca_trial, smoothed_frs_fas_trial[fa_trials_plot_sel], trial_bounds[fa_idxs_to_plot,0],
                  trial_cpoke_start[fa_idxs_to_plot], trial_cpoke_out[fa_idxs_to_plot], kernel['bin_width'], title='FAs - expanded trial',
-                 color_type='trial', colors=trial_colors, norm_trial_idxs=hit_idxs_to_plot/n_trials, x_pc=1, y_pc=3)
+                 color_type='trial', colors=trial_colors, norm_trial_idxs=fa_idxs_to_plot/n_trials, x_pc=1, y_pc=3)
 
 # add color bar
 fig.colorbar(mpl.cm.ScalarMappable(norm=mpl.colors.Normalize(vmin=1, vmax=n_trials), cmap=trial_colors),
