@@ -44,7 +44,7 @@ max_spikes_unit = sess_units.iloc[np.argmax(sess_units['number_spikes'])]
 
 # get trial spike times for each unit
 trial_spikes = ephys_utils.get_trial_spike_times(
-    max_spikes_unit['spike_timestamps'], max_spikes_unit['trial_start_timestamps'])
+    max_spikes_unit['spike_timestamps'], max_spikes_unit['trial_start_timestamps'][0:-1])
 
 # %% Create some PSTHs aligned to different points
 
