@@ -2,12 +2,14 @@ name: neuropy
 channels:
   - defaults
 dependencies:
-  - pytorch
-  - scikit-learn
-  - matplotlib
-  - numpy
-  - scipy
   - pandas
+  - numpy
+  - scikit-learn
+  - pytorch
+  - scipy
+  - matplotlib
   - spyder-kernels
   - notebook
+  - h5py
+  - seaborn
 prefix: C:\Users\tanne\miniconda3\envs\neuropy
