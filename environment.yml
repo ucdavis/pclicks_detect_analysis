@@ -1,6 +1,7 @@
 name: neuropy
 channels:
   - defaults
+  - conda-forge
 dependencies:
   - pandas
   - numpy
@@ -8,8 +9,9 @@ dependencies:
   - pytorch
   - scipy
   - matplotlib
-  - spyder-kernels
   - notebook
   - h5py
+  - spyder-kernels
   - seaborn
+  - statsmodels
 prefix: C:\Users\tanne\miniconda3\envs\neuropy
