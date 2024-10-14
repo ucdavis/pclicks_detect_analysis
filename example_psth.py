@@ -17,7 +17,6 @@ import hankslab_db.pclicksdetect_db as db
 from sys_neuro_tools import ephys_utils, plot_utils
 
 # %% Load the data
-
 loc_db = db.LocalDB_PClicksDetect()
 # subj_ids = loc_db.get_protocol_subject_ids() # will get all subjects recorded during this protocol
 # for now lets just use these ones

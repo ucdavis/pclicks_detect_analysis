@@ -3,15 +3,17 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - pandas
-  - numpy
-  - scikit-learn
-  - pytorch
-  - scipy
+  - h5py
   - matplotlib
   - notebook
-  - h5py
-  - spyder-kernels
+  - numpy
+  - pandas
+  - python-pptx
+  - pytorch
+  - scikit-learn
+  - scipy
   - seaborn
+  - spyder-kernels
   - statsmodels
+  - mysql-connector-python
 prefix: C:\Users\tanne\miniconda3\envs\neuropy
